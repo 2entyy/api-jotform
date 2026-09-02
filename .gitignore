@@ -5,4 +5,15 @@ venv/
 output/
 *.mp4
 *.mov
+*.mp3
+*.wav
 .pytest_cache/
+
+# backend runtime data (uploads, renders, previews, project state)
+backend/data/
+
+# frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+*.tsbuildinfo

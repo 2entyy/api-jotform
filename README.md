@@ -1,84 +1,121 @@
 # video-variator
 
-App local (sem serviços na cloud, sem chaves de API) que pega num vídeo base e gera
-várias variações subtilmente diferentes, para testar em Reels: cada uma tem uma
-legenda/título diferente sugerido a partir do que é dito no vídeo, e uma combinação
-aleatória de pequenas alterações de velocidade, cor e micro-zoom.
+Editor de vídeo local, assistido por IA, para preparar Reels a partir de um vídeo base:
+transcrição, sugestão de gancho para a abertura, vários estilos de legenda com
+pré-visualização, música de fundo com ducking automático, um "crítico" que pontua a
+abertura, uma caixa de comandos em linguagem natural ("Pedir à IA"), e no fim, geração de
+várias variações subtis do vídeo aprovado para testar em Reels.
 
-Usa apenas ferramentas que correm na tua máquina:
+Tudo corre na tua máquina: transcrição com Whisper local, renderização com ffmpeg, sem
+contas, sem hosting, sem chaves de API obrigatórias.
 
-- **Whisper local** (`openai-whisper`) para transcrever o áudio, sem chamadas a APIs externas.
-- **ffmpeg** para renderizar cada variação (texto, velocidade, cor, crop).
+## O que a app faz
 
-## Como funciona
+1. **Sobes um vídeo.** É transcrito localmente (Whisper), com timestamps por segmento e
+   por palavra.
+2. **Sugestão de gancho**: a partir das palavras mais frequentes na transcrição, gera
+   várias opções de título/legenda chamativa para a abertura (ex: "A VERDADE SOBRE...").
+3. **Estilos de legenda**: 6 presets — Discreto, Editorial, Impacto, Karaoke, Uma palavra,
+   Manuscrito — cada um com fonte/cor/posição próprias; Karaoke e Uma palavra destacam
+   palavra a palavra, sincronizadas com a fala. Podes gerar um "lote" de pré-visualizações
+   curtas para veres como cada estilo fica antes de escolheres.
+4. **Corte manual** (início/fim) e **velocidade** ajustável.
+5. **Música de fundo** opcional, com volume automaticamente reduzido ("ducking") por cima
+   da fala.
+6. **Crítico de IA**: analisa os primeiros segundos da transcrição e dá uma pontuação
+   ("Força X/10") com sugestões concretas para reforçar o gancho.
+7. **Pedir à IA**: caixa de comandos em português — "tira a música", "gancho mais forte",
+   "estilo karaoke", "acelera" — que edita o projeto diretamente.
+8. **Aprovar e renderizar**: gera o vídeo final com tudo aplicado.
+9. **Variações para Reels**: a partir do vídeo aprovado, gera N cópias quase-idênticas
+   com pequenos ajustes aleatórios de velocidade, cor e enquadramento, para testares
+   várias publicações sem repostares exatamente o mesmo ficheiro.
 
-Para cada vídeo, o pipeline:
+Se tiveres o [Ollama](https://ollama.com) a correr localmente, o crítico e o "Pedir à IA"
+usam-no automaticamente para respostas mais ricas; caso contrário usam heurísticas locais
+— a app funciona por completo sem ele.
 
-1. Transcreve o áudio localmente com Whisper.
-2. A partir das palavras mais frequentes na transcrição, gera um título/legenda
-   chamativo diferente por variação (ex: `A VERDADE SOBRE VIAGENS`), usando modelos
-   de frase prontos — sem chamar nenhuma IA externa.
-3. Para cada variação escolhe, dentro de intervalos pequenos e configuráveis:
-   - velocidade (±6%)
-   - brilho/contraste/saturação/matiz (ajustes mínimos)
-   - um micro-zoom/crop (até 3%)
-   - opcionalmente espelhar o vídeo (desativado por omissão)
-4. Desenha o título numa caixa de legenda no topo do vídeo com `drawtext` do ffmpeg.
-5. Escreve um `*_manifest.json` na pasta de saída com os parâmetros exatos usados em
-   cada variação, para poderes cruzar com o desempenho de cada Reel depois.
+## Arquitetura
+
+```
+backend/    FastAPI + Whisper local + ffmpeg (a API e o motor de edição)
+frontend/   React + Vite (a interface: transcrição, timeline, assistente)
+video_variator/   motor original de variações (velocidade/cor/crop), reutilizado
+                   pelo backend para o passo "Variações para Reels"; também
+                   continua a funcionar como CLI standalone (ver abaixo)
+```
 
 ## Pré-requisitos
 
 - Python 3.10+
-- [`ffmpeg`](https://ffmpeg.org/) instalado e no `PATH` (`ffmpeg -version` deve funcionar)
-- Uma fonte `.ttf` (o script já procura DejaVu Sans Bold / Liberation Sans Bold,
-  comuns na maioria das distros Linux)
+- Node.js 18+
+- [`ffmpeg`](https://ffmpeg.org/) e `ffprobe` instalados e no `PATH`
+- Uma fonte `.ttf` (o backend procura DejaVu Sans Bold / Liberation Sans Bold)
+- Opcional: [Ollama](https://ollama.com) a correr em `localhost:11434` para respostas de
+  IA mais ricas no crítico e no "Pedir à IA"
 
-## Instalação
+## Instalação e arranque
+
+**Backend** (a partir da raiz do repositório, para que os pacotes `backend` e
+`video_variator` sejam ambos importáveis):
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt -r backend/requirements.txt
+python -m uvicorn backend.app.main:app --reload --port 8000
 ```
 
-A primeira transcrição descarrega o modelo Whisper escolhido (fica em cache local
-em `~/.cache/whisper`); depois disso corre totalmente offline.
+A primeira transcrição descarrega o modelo Whisper escolhido (fica em cache local em
+`~/.cache/whisper`); depois disso corre offline.
 
-## Uso
+**Frontend** (noutro terminal):
 
 ```bash
-python -m video_variator.cli video.mp4 -n 5 -o output --model small
+cd frontend
+npm install
+npm run dev
 ```
 
-Opções principais:
+Abre `http://localhost:5173`. O frontend fala com o backend em `http://localhost:8000`
+(CORS já configurado).
 
-| Flag | Descrição |
-|---|---|
-| `-n, --num-variations` | quantas variações gerar (default 5) |
-| `-o, --output-dir` | pasta de saída (default `output`) |
-| `--model` | tamanho do modelo Whisper: `tiny`, `base`, `small`, `medium`, `large` |
-| `--seed` | fixa a aleatoriedade, para resultados reprodutíveis |
-| `--font` | caminho para uma fonte `.ttf` própria |
-| `--allow-mirror` | permite espelhar o vídeo como uma das variações possíveis |
-| `--no-crop` | desativa o micro-zoom/crop |
-| `--dry-run` | só transcreve e escreve o manifest, sem renderizar vídeo (útil para pré-visualizar os títulos sugeridos rapidamente) |
-
-Cada variação sai como `<nome-original>_var1.mp4`, `_var2.mp4`, etc., mais um
-`<nome-original>_manifest.json` com a transcrição e os parâmetros usados em cada uma.
+Os projetos (vídeo, transcrição, renders, previews) ficam em `backend/data/projects/<id>/`.
 
 ## Testes
 
-Os testes cobrem a geração de títulos e a construção dos filtros ffmpeg (não
-precisam de ffmpeg nem de Whisper instalados):
+Cobrem toda a lógica pura (geração de títulos, construção de `.ass`, crítico, parser de
+comandos, ducking de música, escaping de filtros ffmpeg) — não precisam de ffmpeg, Whisper
+nem Node instalados:
 
 ```bash
 pip install -r requirements-dev.txt
 pytest
 ```
 
+Para o frontend, `cd frontend && npx tsc -b && npx vite build` valida tipos e build.
+
+## Limitações conhecidas (honestamente)
+
+- A timeline é informativa e clicável (clica numa legenda para saltar o vídeo para lá),
+  mas não tem arrastar/redimensionar blocos — o corte é feito pelos campos numéricos de
+  início/fim.
+- O upload e a renderização são pedidos síncronos: para vídeos longos ou modelos Whisper
+  maiores, o pedido demora — não há barra de progresso, só o estado "a processar".
+- A deteção de batidas de música (`backend/app/music.py`, via `librosa`) está implementada
+  mas não está ligada à interface — por agora o ducking usa apenas as janelas de fala.
+
+## O motor de variações como CLI standalone
+
+O pacote `video_variator/` continua a funcionar sozinho, sem o backend/frontend, para
+quem só quer gerar variações a partir da linha de comandos:
+
+```bash
+python -m video_variator.cli video.mp4 -n 5 -o output --model small
+```
+
+Ver `video_variator/cli.py --help` para todas as opções.
+
 ## Nota
 
-Usa isto apenas com vídeos sobre os quais tens direitos — o objetivo é testar
-diferentes ganchos/títulos e edições do teu próprio conteúdo, não republicar
-conteúdo de terceiros.
+Usa isto apenas com vídeos sobre os quais tens direitos.
