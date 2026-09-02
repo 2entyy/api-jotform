@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+empresas_alvo_68100_250k.csv
+empresas_input_exemplo.csv
+erros_processamento.log
