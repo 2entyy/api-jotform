@@ -1,0 +1,20 @@
+COMO ABRIR A APP (Windows) - passo a passo simples
+====================================================
+
+1. Descarrega este ficheiro (clica no link, depois "Guardar como"):
+   https://raw.githubusercontent.com/2entyy/api-jotform/claude/video-variations-editing-j58hmi/windows/bootstrap.bat
+
+2. Faz duplo-clique no ficheiro "bootstrap.bat" que descarregaste.
+   - Se aparecer um aviso azul do Windows ("O Windows protegeu o
+     computador"), clica em "Mais informacoes" e depois "Executar
+     mesmo assim".
+   - Ele vai instalar tudo o que falta. Se pedir para o correres outra
+     vez depois de instalar programas novos, fecha e faz duplo-clique
+     outra vez no mesmo ficheiro.
+
+3. No fim aparece um icone no Ambiente de Trabalho chamado
+   "Abrir Video Variator". Da proxima vez que quiseres usar a app,
+   usa so esse icone (nao precisas de repetir os passos acima).
+
+A primeira vez demora uns minutos (esta a descarregar e instalar
+tudo). As vezes seguintes abrem muito mais depressa.

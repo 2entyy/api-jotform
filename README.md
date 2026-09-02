@@ -9,6 +9,20 @@ várias variações subtis do vídeo aprovado para testar em Reels.
 Tudo corre na tua máquina: transcrição com Whisper local, renderização com ffmpeg, sem
 contas, sem hosting, sem chaves de API obrigatórias.
 
+## Windows — modo fácil (recomendado se não usas o terminal)
+
+Não é um `.exe` único (isso exigiria embutir vários GB de bibliotecas de IA), mas é
+"descarrega e faz duplo-clique": um ficheiro instala tudo o que falta e cria um ícone no
+Ambiente de Trabalho para abrires a app a partir daí. Ver `windows/LEIA-ME.txt` — resumo:
+
+1. Descarrega
+   [`windows/bootstrap.bat`](https://raw.githubusercontent.com/2entyy/api-jotform/claude/video-variations-editing-j58hmi/windows/bootstrap.bat).
+2. Faz duplo-clique nele (se o Windows avisar, escolhe "Executar mesmo assim").
+3. No fim fica um ícone "Abrir Video Variator" no Ambiente de Trabalho — usa esse a partir
+   daí.
+
+Para quem prefere o terminal, os passos manuais estão abaixo.
+
 ## O que a app faz
 
 1. **Sobes um vídeo.** É transcrito localmente (Whisper), com timestamps por segmento e
